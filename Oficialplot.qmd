@@ -1,0 +1,397 @@
+---
+title: "Oficialplot"
+---
+# Opciones básicas de ggplot2:
+
+De acuerdo con la "gramática de los gráficos", todo gráfico estadístico tiene tres componentes: 
+1. Datos (dataframe)
+2. Mapeos de las columnas del dataframe a las propiedades isuales del gráfico (x, y, color, tamaño, forma, etc.)
+3. Una o varias capas con geometrías (geom_point(), geom_bar(), geom_box())
+```{r}
+library(DT)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(leaflet)
+library(sf)
+library(readxl)
+library(tidyverse)
+library(ggthemes)
+library(hrbrthemes)
+library(gapminder)
+```
+
+```{r{}
+#| label: grafico-basico
+#| warning: false
+#| message: false
+#| code-fold: true
+```
+
+# Plotly
+
+
+
+
+```{r}
+# Gráfico ggplot2
+grafico_ggplot2 <-
+  mpg |>
+  ggplot(aes(x = displ, y = hwy, color = drv)) +
+  geom_point(aes(
+    # datos que se muestran al colocar el ratón sobre un punto
+    text = paste0(
+      "Modelo: ", manufacturer, " ", model, " ", year, "\n",
+      "Cilindrada: ", displ, " l", "\n",
+      "Rendimiento en autopista: ", hwy, " mpg", "\n",
+      "Tipo de tracción: ", drv
+    )
+  )) +
+  geom_smooth() +
+  ggtitle("Cilindrada vs rendimiento en autopista") +
+  xlab("Cilindrada (l)") +
+  ylab("Rendimiento en autopista (mpg)") +
+  labs(subtitle = "Datos de 38 modelos de automóviles de años entre 1999 y 2008",
+       caption = "Fuente: United States Environmental Protection Agency (EPA)",
+       color = "Tipo de tracción") +
+  theme_ipsum()
+
+# Gráfico plotly
+ggplotly(grafico_ggplot2, tooltip = "text") |> 
+  config(locale = 'es') # para mostrar los controles en español
+```
+
+```{r}
+#| label: histogramas
+# Histograma ggplot2 de distribución del PIB per cápita en 2007 por continente
+histograma_ggplot2 <-
+  gapminder |>
+  filter(year == 2007) |>
+  ggplot(aes(x = gdpPercap, fill = continent)) +
+  geom_histogram(
+    aes(
+      text = paste0(
+        "Continente: ", after_stat(fill), "\n",
+        "PIB per cápita (valor medio del rango): $", round(after_stat(x), 2), "\n",
+        "Frecuencia: ", after_stat(count)
+      ),      
+      y = after_stat(density)
+    ),    
+    bins = 10
+  ) +
+  ggtitle("Distribución del PIB per cápita en 2007 por continente") +
+  xlab("PIB per cápita ($ EE.UU.)") +
+  ylab("Densidad") +
+  labs(subtitle = "Datos de 140 países",
+       caption = "Fuente: Gapminder.org",
+       fill = "Continente") +
+  theme_economist()
+
+# Histograma plotly
+ggplotly(histograma_ggplot2, tooltip = "text") |>
+  config(locale = 'es')
+```
+
+```{r}
+# Histogramas ggplot2 de distribución del PIB per cápita en 2007 por continente
+histograma_ggplot2 <-
+  gapminder |>
+  filter(year == 2007) |>
+  ggplot(aes(x = gdpPercap)) +
+  geom_histogram(
+    aes(
+      text = paste0(
+        "PIB per cápita (valor medio del rango): $", round(after_stat(x), 2), "\n",
+        "Frecuencia: ", after_stat(count)
+      )
+    ),
+    bins = 10
+  ) +
+  ggtitle("Distribución del PIB per cápita en 2007 por continente") +
+  xlab("PIB per cápita ($ EE.UU.)") +
+  ylab("Frecuencia") +
+  labs(subtitle = "Datos de 140 países",
+       caption = "Fuente: Gapminder.org",
+       fill = "Continente") +
+  facet_wrap(~ continent, nrow = 2) +
+  theme_economist()
+
+# Histograma plotly
+ggplotly(histograma_ggplot2, tooltip = "text") |>
+  config(locale = 'es')
+```
+
+```{r}
+#| label: bloxplots
+#| warning: false
+#| message: false
+# Gráfico de caja ggplot2 de distribución del PIB per cápita en 2007
+grafico_caja_ggplot2 <-
+gapminder |>
+  filter(year == 2007) |>
+  ggplot(aes(y = gdpPercap)) +
+  geom_boxplot() +
+  ggtitle("Distribución del PIB per cápita en 2007") +
+  ylab("PIB per cápita ($ EE.UU.)") +
+  labs(subtitle = "Datos de 140 países", caption = "Fuente: Gapminder.org") +
+  theme_economist()
+
+# Gráfico de caja plotly
+ggplotly(grafico_caja_ggplot2) |> 
+  config(locale = 'es')
+```
+```{r}
+# Gráfico de caja ggplot2 de distribución del PIB per cápita en 2007 por continente
+grafico_caja_ggplot2 <-
+gapminder |>
+  filter(year == 2007) |>
+  ggplot(aes(x = continent, y = gdpPercap)) +
+  geom_boxplot() +
+  ggtitle("Distribución del PIB per cápita en 2007 por continente") +
+  ylab("PIB per cápita ($ EE.UU.)") +
+  labs(subtitle = "Datos de 140 países", caption = "Fuente: Gapminder.org") +
+  theme_economist()
+
+# Gráfico de caja plotly
+ggplotly(grafico_caja_ggplot2) |> 
+  config(locale = 'es')
+```
+
+```{r}
+# Gráfico de barras con conteo de países por continente para el año 2007
+grafico_barras_ggplot2 <-
+gapminder |>
+  filter(year == 2007) |>
+  ggplot(aes(x = continent)) +
+  geom_bar(
+    aes(
+      text = paste0(
+        "Cantidad de países: ", after_stat(count)
+      )
+    ),    
+  ) +
+  ggtitle("Cantidad de países por continente") +
+  xlab("Continente") +
+  ylab("Cantidad de países") +
+  labs(caption = "Fuente: Gapminder.org") +
+  theme_economist()
+
+# Gráfico de barras plotly
+ggplotly(grafico_barras_ggplot2, tooltip = "text") |> 
+  config(locale = 'es')
+```
+```{r}
+# Gráfico de barras con conteo de países por continente para el año 2007
+grafico_barras_ggplot2 <-
+gapminder |>
+  filter(year == 2007) |>
+  ggplot(aes(x = fct_infreq(continent))) +
+  geom_bar(
+    aes(
+      text = paste0(
+        "Cantidad de países: ", after_stat(count)
+      )
+    )    
+  ) +
+  ggtitle("Cantidad de países por continente") +
+  xlab("Continente") +
+  ylab("Cantidad de países") +
+  labs(caption = "Fuente: Gapminder.org") +
+  theme_economist()
+
+# Gráfico de barras plotly
+ggplotly(grafico_barras_ggplot2, tooltip = "text") |> 
+  config(locale = 'es')
+```
+```{r}
+# Gráfico de barras con promedio de esperanza de vida
+# para cada continente para el año 2007
+grafico_barras_ggplot2 <-
+  gapminder |>
+  filter(year == 2007) |>
+  ggplot(aes(x = fct_infreq(continent), y = lifeExp)) +
+  geom_bar(
+    stat = "summary", 
+    fun.y = "mean",
+    aes(
+      text = paste0(
+        "Promedio de esperanza de vida: ", round(after_stat(y), 2)
+      )
+    )
+  ) +
+  ggtitle("Promedio de esperanza de vida por continente en 2007") +
+  xlab("Continente") +
+  ylab("Promedio de esperanza de vida") +
+  labs(caption = "Fuente: Gapminder.org") +
+  theme_economist()
+
+# Gráfico de barras plotly
+ggplotly(grafico_barras_ggplot2, tooltip = "text") |>
+  config(locale = 'es')
+```
+
+```{r}
+# Cálculo del promedio de esperanza de vida por continente
+gapminder_mean_lifeExp_continent <-
+  gapminder |>
+  filter(year == 2007) |>
+  group_by(continent) |>
+  summarize(lifeExp_mean = mean(lifeExp))
+
+# Despliegue por orden descendente del promedio de esperanza de vida
+gapminder_mean_lifeExp_continent |>
+  arrange(desc(lifeExp_mean))
+```
+```{r}
+# Gráfico de barras con promedio de esperanza de vida
+# para cada continente para el año 2007
+grafico_barras_ggplot2 <-
+  gapminder_mean_lifeExp_continent |>
+  ggplot(aes(x = reorder(continent,-lifeExp_mean), y = lifeExp_mean)) +
+  geom_col(
+    aes(
+      text = paste0(
+        "Promedio de esperanza de vida: ", round(after_stat(y), 2)
+      )
+    )    
+  ) +
+  ggtitle("Promedio de esperanza de vida por continente en 2007") +
+  xlab("Continente") +
+  ylab("Promedio de esperanza de vida") +
+  labs(caption = "Fuente: Gapminder.org") +
+  theme_economist()
+
+# Gráfico de barras plotly
+ggplotly(grafico_barras_ggplot2, tooltip = "text") |>
+  config(locale = 'es')
+```
+
+```{r}
+# Gráfico de barras con población de países 
+# de América para el año 2007
+grafico_barras_ggplot2 <-
+gapminder |>
+  filter(year == 2007 & continent == "Americas") |>
+  ggplot(aes(x = reorder(country, pop), y = pop/1000000)) +
+  geom_col(
+    aes(
+      text = paste0(
+        "País: ", country, "\n",
+        "Población (millones de habitantes): ", round(pop/1000000, 2)
+      )
+    )
+  ) +
+  coord_flip() + # para mostrar barras horizontales
+  ggtitle("Población de países de América en 2007") +
+  xlab("País") +
+  ylab("Población (millones de habitantes)") +
+  labs(caption = "Fuente: Gapminder.org") +
+  theme_economist()
+
+# Gráfico de barras plotly
+ggplotly(grafico_barras_ggplot2, tooltip = "text") |> 
+  config(locale = 'es')
+```
+
+
+```{r}
+# Gráfico de barras apiladas por tipo de corte y claridad 
+grafico_barras_ggplot2 <-
+diamonds |>
+  ggplot(aes(x = cut, fill = clarity)) +
+  geom_bar() +
+  ggtitle("Cantidad de diamantes por corte y claridad") +
+  xlab("Corte") +
+  ylab("Cantidad de diamantes") +
+  labs(fill = "Claridad") +
+  theme_minimal()
+
+# Gráfico de barras plotly
+ggplotly(grafico_barras_ggplot2) |> 
+  config(locale = 'es')
+```
+
+```{r}
+# Gráfico de barras apiladas por tipo de corte y claridad 
+grafico_barras_ggplot2 <-
+diamonds |>
+  ggplot(aes(x = cut, fill = clarity)) +
+  geom_bar(position = "fill") +
+  ggtitle("Proporción de tipos de claridad en cortes de diamantes") +
+  xlab("Corte") +
+  ylab("Proporción") +
+  labs(fill = "Claridad") +
+  theme_minimal()
+
+# Gráfico de barras plotly
+ggplotly(grafico_barras_ggplot2) |> 
+  config(locale = 'es')
+```
+
+```{r}
+# Gráfico de barras agrupadas por tipo de corte y claridad 
+grafico_barras_ggplot2 <-
+diamonds |>
+  ggplot(aes(x = cut, fill = clarity)) +
+  geom_bar(position = "dodge") +
+  ggtitle("Cantidad de diamantes por corte y claridad") +
+  xlab("Corte") +
+  ylab("Cantidad de diamantes") +
+  labs(fill = "Claridad") +
+  theme_minimal()
+
+# Gráfico de barras plotly
+ggplotly(grafico_barras_ggplot2) |> 
+  config(locale = 'es')
+```
+
+```{r}
+# Gráfico de dispersión PIB per cápita vs esperanza de vida en 2007
+# + línea de tendencia
+grafico_dispersion_ggplot2 <-
+  gapminder |>
+  filter(year == 2007) |>
+  ggplot(aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(aes(
+    text = paste0(
+      "País: ", country, "\n",
+      "PIB per cápita: $", round(gdpPercap, 2), "\n",
+      "Esperanza de vida: ", round(lifeExp, 2), " años"
+    )
+  )) +
+  geom_smooth(method = "lm") +
+  ggtitle("PIB per cápita vs esperanza de vida en 2007") +
+  xlab("PIB per cápita ($ EE.UU.)") +
+  ylab("Esperanza de vida (años)") +
+  labs(caption = "Fuente: Gapminder.org") +
+  theme_economist()  
+
+# Gráfico de dispersión plotly
+ggplotly(grafico_dispersion_ggplot2, tooltip = "text") |>
+  config(locale = 'es')
+```
+
+```{r}
+# Gráfico de dispersión PIB per cápita vs esperanza de vida por continente en 2007
+grafico_dispersion_ggplot2 <-
+  gapminder |>
+  filter(year == 2007) |>
+  ggplot(aes(x = gdpPercap, y = lifeExp, color = continent)) +
+  geom_point(aes(
+    text = paste0(
+      "País: ", country, "\n",
+      "Continente: ", continent, "\n",
+      "PIB per cápita: $", round(gdpPercap, 2), "\n",
+      "Esperanza de vida: ", round(lifeExp, 2), " años"      
+    )
+  )) +
+  ggtitle("PIB per cápita vs esperanza de vida por continente en 2007") +
+  xlab("PIB per cápita ($ EE.UU.)") +
+  ylab("Esperanza de vida (años)") +
+  labs(caption = "Fuente: Gapminder.org", color = "Continente") +
+  theme_economist()  
+
+# Gráfico de dispersión plotly
+ggplotly(grafico_dispersion_ggplot2, tooltip = "text") |>
+  config(locale = 'es')
+```
